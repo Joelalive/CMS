@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\posts\CreatePostsRequest;
+use App\Http\Requests\posts\UpdatePostRequest;
 use App\post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -72,7 +73,7 @@ class PostsController extends Controller
      */
     public function edit(post $post)
     {
-        //
+        return view('posts.create', compact('post'));
     }
 
     /**
@@ -82,9 +83,28 @@ class PostsController extends Controller
      * @param  \App\post  $post
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, post $post)
+    public function update(UpdatePostRequest $request, post $post)
     {
-        //
+
+        $data = $request->only(['title','description','content','published_at']);
+
+        if($request->hasFile('image')){
+
+            $image = $request->image->store('posts');
+
+            Storage::delete($post->image);
+
+        }
+
+        $data['image'] = $image;
+
+        $post->update($data);
+
+        session()->flash('success', 'Post Updated Successfully.');
+
+        return redirect()->route('posts.index');
+
+
     }
 
     /**
@@ -127,7 +147,7 @@ class PostsController extends Controller
 
     public function trashed(){
 
-        $trashed = post::withTrashed()->get();
+        $trashed = post::onlyTrashed()->get();
 
         return view('posts.index')->with('posts', $trashed);
 
